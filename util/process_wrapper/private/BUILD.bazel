@@ -1,4 +1,5 @@
-exports_files([
-    "process_wrapper.sh",
-    "process_wrapper.bat",
-])
+cc_binary(
+    name = "bootstrap_process_wrapper",
+    srcs = ["bootstrap_process_wrapper.cc"],
+    visibility = ["//visibility:public"],
+)

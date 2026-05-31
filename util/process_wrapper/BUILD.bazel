@@ -2,7 +2,6 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper", "rust_test_without_process_wrapper_test")
-load("//util/process_wrapper/private:bootstrap_process_wrapper.bzl", "bootstrap_process_wrapper")
 
 config_setting(
     name = "compilation_mode_opt",
@@ -35,9 +34,6 @@ rust_binary_without_process_wrapper(
         "//conditions:default": "@rules_rust//ffi/rs:empty_allocator_libraries",
     }),
     edition = "2018",
-    # To ensure the process wrapper is produced deterministically
-    # debug info, which is known to sometimes have host specific
-    # paths embedded in this section, is stripped out.
     rustc_flags = select({
         ":opt_linux": ["-Cstrip=debuginfo"],
         ":opt_macos": ["-Cstrip=debuginfo"],
@@ -55,11 +51,8 @@ rust_test_without_process_wrapper_test(
     edition = "2018",
 )
 
-bootstrap_process_wrapper(
+alias(
     name = "bootstrap_process_wrapper",
-    is_windows = select({
-        "@platforms//os:windows": True,
-        "//conditions:default": False,
-    }),
+    actual = "//util/process_wrapper/private:bootstrap_process_wrapper",
     visibility = ["//visibility:public"],
 )

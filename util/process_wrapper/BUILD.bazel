@@ -1,8 +1,10 @@
+load("//util/process_wrapper:static_transition.bzl", "static_process_wrapper")
+
 # buildifier: disable=bzl-visibility
 load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper", "rust_test_without_process_wrapper_test")
 
 rust_binary_without_process_wrapper(
-    name = "process_wrapper",
+    name = "process_wrapper_impl",
     srcs = glob(["*.rs"]),
     allocator_libraries = select({
         "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on": "@rules_rust//ffi/rs:allocator_libraries_with_mangling_support_without_process_wrapper",
@@ -24,15 +26,24 @@ rust_binary_without_process_wrapper(
         "@rules_rust//rust/private:bootstrapping": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
-    visibility = ["//visibility:public"],
     deps = [
         "@rules_rust_tinyjson//:tinyjson",
     ],
 )
 
+# Wrap process_wrapper_impl with a platform transition to the linux-musl
+# target, producing a fully static binary safe to remote-cache across glibc
+# versions. The transition is applied only to this target; proc-macros and
+# other exec-platform Rust builds are unaffected.
+static_process_wrapper(
+    name = "process_wrapper",
+    binary = ":process_wrapper_impl",
+    visibility = ["//visibility:public"],
+)
+
 rust_test_without_process_wrapper_test(
     name = "process_wrapper_test",
-    crate = ":process_wrapper",
+    crate = ":process_wrapper_impl",
     edition = "2018",
 )
 
